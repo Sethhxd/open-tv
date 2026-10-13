@@ -31,6 +31,7 @@ import { RestreamModalComponent } from './restream-modal/restream-modal.componen
 import { SortButtonComponent } from './home/sort-button/sort-button.component';
 import { SortItemComponent } from './home/sort-button/sort-item/sort-item.component';
 import { DownloadManagerComponent } from './download-manager/download-manager.component';
+import { PlayerComponent } from './player/player.component';
 
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
 import { TimeUntilPipe } from './pipes/time-until.pipe';
@@ -62,6 +63,7 @@ import { TimeUntilPipe } from './pipes/time-until.pipe';
     SortButtonComponent,
     SortItemComponent,
     DownloadManagerComponent,
+    PlayerComponent,
   ],
   imports: [
     BrowserModule,

@@ -1,0 +1,267 @@
+<div class="player" [class.hide-cursor]="!showControls" [class.mini]="mini">
+  <!-- Clicks on the (transparent) surface control playback; mpv renders underneath. -->
+  <div
+    class="surface"
+    (click)="onSurfaceClick()"
+    (dblclick)="toggleFullscreen()"
+    (contextmenu)="onContextMenu($event)"
+  ></div>
+
+  <div class="spinner" *ngIf="buffering"></div>
+
+  @for (b of bezel ? [bezel] : []; track b.key) {
+    <div class="bezel">
+      <div class="bezel-icon">
+        <svg viewBox="0 0 24 24"><path [attr.d]="b.icon" /></svg>
+      </div>
+      <div class="bezel-text" *ngIf="b.text">{{ b.text }}</div>
+    </div>
+  }
+
+  <div class="hint" *ngIf="volumeHint">{{ volumeHint }}</div>
+
+  <button class="end-replay" *ngIf="ended" (click)="replay()" aria-label="Replay">
+    <svg viewBox="0 0 24 24"><path [attr.d]="icons.replay" /></svg>
+  </button>
+
+  <!-- Top bar: title + window controls; doubles as the drag handle. -->
+  <div class="top" [class.visible]="showControls" data-tauri-drag-region>
+    <div class="title" data-tauri-drag-region>{{ title }}</div>
+    <div class="window-buttons">
+      <button (click)="minimize()" aria-label="Minimize">
+        <svg viewBox="0 0 24 24"><path [attr.d]="icons.winMinimize" /></svg>
+      </button>
+      <button (click)="toggleMaximize()" aria-label="Maximize">
+        <svg viewBox="0 0 24 24"><path [attr.d]="icons.winMaximize" /></svg>
+      </button>
+      <button class="close" (click)="close()" aria-label="Close">
+        <svg viewBox="0 0 24 24"><path [attr.d]="icons.winClose" /></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats for nerds -->
+  <div class="stats" *ngIf="stats">
+    <button class="stats-close" (click)="stats = false" aria-label="Close stats">[X]</button>
+    <div><b>Stream</b> {{ p["path"] }}</div>
+    <div>
+      <b>Resolution</b> {{ p["video-params"]?.w }}x{{ p["video-params"]?.h }}&#64;{{
+        p["estimated-vf-fps"] | number: "1.0-2"
+      }}
+    </div>
+    <div><b>Codecs</b> {{ p["video-codec"] }} / {{ p["audio-codec-name"] }}</div>
+    <div><b>Hardware decoding</b> {{ p["hwdec-current"] || "no" }}</div>
+    <div><b>Dropped frames</b> {{ p["frame-drop-count"] ?? 0 }}</div>
+    <div><b>Bitrate</b> {{ kbps(p["video-bitrate"]) }} / {{ kbps(p["audio-bitrate"]) }}</div>
+    <div><b>Connection speed</b> {{ kbps((p["cache-speed"] ?? 0) * 8) }}</div>
+    <div><b>Buffer health</b> {{ p["demuxer-cache-duration"] ?? 0 | number: "1.2-2" }} s</div>
+  </div>
+
+  <!-- Bottom controls -->
+  <div
+    class="bottom"
+    [class.visible]="showControls"
+    (mouseenter)="hoveringControls = true"
+    (mouseleave)="hoveringControls = false"
+  >
+    <div
+      class="progress"
+      *ngIf="hasTimeline"
+      #bar
+      [class.scrubbing]="scrubbing"
+      (mousemove)="onBarHover($event, bar)"
+      (mouseleave)="hoverFraction = undefined"
+      (mousedown)="onBarDown($event, bar)"
+    >
+      <div class="progress-track">
+        <div class="progress-buffered" [style.width.%]="bufferedFraction * 100"></div>
+        <div
+          class="progress-hover"
+          *ngIf="hoverFraction !== undefined"
+          [style.width.%]="hoverFraction * 100"
+        ></div>
+        <div class="progress-played" [style.width.%]="playedFraction * 100"></div>
+      </div>
+      <div class="scrubber" [style.left.%]="playedFraction * 100"></div>
+      <div
+        class="tooltip"
+        *ngIf="hoverFraction !== undefined"
+        [style.left.%]="hoverFraction * 100"
+      >
+        {{ fmt(hoverFraction * duration) }}
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="left">
+        <button *ngIf="hasPrev" (click)="cmd('playlist-prev')" aria-label="Previous (Shift+P)">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.prev" /></svg>
+        </button>
+        <button (click)="togglePause()" [attr.aria-label]="paused ? 'Play (k)' : 'Pause (k)'">
+          <svg viewBox="0 0 24 24">
+            <path [attr.d]="ended ? icons.replay : paused ? icons.play : icons.pause" />
+          </svg>
+        </button>
+        <button *ngIf="hasNext" (click)="cmd('playlist-next')" aria-label="Next (Shift+N)">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.next" /></svg>
+        </button>
+
+        <div class="volume">
+          <button (click)="toggleMute()" [attr.aria-label]="muted ? 'Unmute (m)' : 'Mute (m)'">
+            <svg viewBox="0 0 24 24"><path [attr.d]="volumeIcon" /></svg>
+          </button>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            aria-label="Volume"
+            [value]="muted ? 0 : p['volume']"
+            [style.--fill.%]="muted ? 0 : p['volume']"
+            (input)="setVolume(+$any($event.target).value)"
+          />
+        </div>
+
+        <div class="time" *ngIf="hasTimeline">
+          {{ fmt(scrubFraction !== undefined ? scrubFraction * duration : position) }} /
+          {{ fmt(duration) }}
+        </div>
+        <button class="live" *ngIf="live" [class.behind]="!atLiveEdge" (click)="goLive()">
+          <span class="dot"></span>LIVE
+        </button>
+      </div>
+
+      <div class="right">
+        <button
+          *ngIf="tracksOf('sub').length"
+          class="cc"
+          [class.on]="selected('sub')"
+          (click)="toggleCaptions()"
+          aria-label="Subtitles/closed captions (c)"
+        >
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.captions" /></svg>
+        </button>
+        <button
+          class="gear"
+          [class.open]="menu"
+          (click)="menu = menu ? undefined : 'main'"
+          aria-label="Settings"
+        >
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.settings" /></svg>
+        </button>
+        <button (click)="toggleMini()" aria-label="Miniplayer (i)">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.mini" /></svg>
+        </button>
+        <button (click)="toggleFullscreen()" aria-label="Full screen (f)">
+          <svg viewBox="0 0 24 24">
+            <path [attr.d]="fullscreen ? icons.fullscreenExit : icons.fullscreen" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings menu (gear) -->
+  <div class="menu settings-menu" *ngIf="menu" (click)="$event.stopPropagation()">
+    <ng-container [ngSwitch]="menu">
+      <ng-container *ngSwitchCase="'main'">
+        <button class="item" *ngIf="tracksOf('sub').length" (click)="menu = 'sub'">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.captions" /></svg>
+          <span class="label">Subtitles/CC</span>
+          <span class="value">{{ trackLabel(selected("sub")) }}</span>
+          <svg class="chev" viewBox="0 0 24 24"><path [attr.d]="icons.chevronRight" /></svg>
+        </button>
+        <button class="item" *ngIf="tracksOf('audio').length > 1" (click)="menu = 'audio'">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.audio" /></svg>
+          <span class="label">Audio track</span>
+          <span class="value">{{ trackLabel(selected("audio")) }}</span>
+          <svg class="chev" viewBox="0 0 24 24"><path [attr.d]="icons.chevronRight" /></svg>
+        </button>
+        <button class="item" *ngIf="!live" (click)="menu = 'speed'">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.speed" /></svg>
+          <span class="label">Playback speed</span>
+          <span class="value">{{ p["speed"] == 1 ? "Normal" : p["speed"] }}</span>
+          <svg class="chev" viewBox="0 0 24 24"><path [attr.d]="icons.chevronRight" /></svg>
+        </button>
+        <button class="item" (click)="menu = 'sleep'">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.sleep" /></svg>
+          <span class="label">Sleep timer</span>
+          <span class="value">{{ sleepLabel }}</span>
+          <svg class="chev" viewBox="0 0 24 24"><path [attr.d]="icons.chevronRight" /></svg>
+        </button>
+        <button class="item" *ngIf="tracksOf('video').length" (click)="menu = 'quality'">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.quality" /></svg>
+          <span class="label">Quality</span>
+          <span class="value">{{ trackLabel(selected("video")) }}</span>
+          <svg class="chev" viewBox="0 0 24 24"><path [attr.d]="icons.chevronRight" /></svg>
+        </button>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'speed'">
+        <button class="item header" (click)="menu = 'main'">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.chevronLeft" /></svg>
+          <span class="label">Playback speed</span>
+        </button>
+        <button class="item option" *ngFor="let s of speeds" (click)="setSpeed(s)">
+          <svg viewBox="0 0 24 24"><path *ngIf="p['speed'] == s" [attr.d]="icons.check" /></svg>
+          <span class="label">{{ s == 1 ? "Normal" : s }}</span>
+        </button>
+      </ng-container>
+
+      <ng-container *ngSwitchCase="'sleep'">
+        <button class="item header" (click)="menu = 'main'">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.chevronLeft" /></svg>
+          <span class="label">Sleep timer</span>
+        </button>
+        <button class="item option" *ngFor="let m of sleepMinutes" (click)="setSleep(m)">
+          <svg viewBox="0 0 24 24"><path *ngIf="!m && !sleepAt" [attr.d]="icons.check" /></svg>
+          <span class="label">{{ m ? m + " minutes" : "Off" }}</span>
+        </button>
+      </ng-container>
+
+      <ng-container *ngSwitchDefault>
+        <!-- track pickers: sub / audio / quality -->
+        <button class="item header" (click)="menu = 'main'">
+          <svg viewBox="0 0 24 24"><path [attr.d]="icons.chevronLeft" /></svg>
+          <span class="label">{{
+            menu === "sub" ? "Subtitles/CC" : menu === "audio" ? "Audio track" : "Quality"
+          }}</span>
+        </button>
+        <button class="item option" *ngIf="menu === 'sub'" (click)="selectTrack('sub', 'no')">
+          <svg viewBox="0 0 24 24"><path *ngIf="!selected('sub')" [attr.d]="icons.check" /></svg>
+          <span class="label">Off</span>
+        </button>
+        <button
+          class="item option"
+          *ngFor="let t of tracksOf(menu === 'quality' ? 'video' : $any(menu))"
+          (click)="selectTrack(t.type, t.id)"
+        >
+          <svg viewBox="0 0 24 24"><path *ngIf="t.selected" [attr.d]="icons.check" /></svg>
+          <span class="label">{{ trackLabel(t) }}</span>
+        </button>
+      </ng-container>
+    </ng-container>
+  </div>
+
+  <!-- Right-click menu -->
+  <div
+    class="menu context-menu"
+    *ngIf="contextMenu"
+    [style.left.px]="contextMenu.x"
+    [style.top.px]="contextMenu.y"
+    (click)="$event.stopPropagation()"
+  >
+    <button class="item" *ngIf="!live" (click)="toggleLoop()">
+      <svg viewBox="0 0 24 24"><path [attr.d]="icons.loop" /></svg>
+      <span class="label">Loop</span>
+      <svg class="chev" viewBox="0 0 24 24"><path *ngIf="looping" [attr.d]="icons.check" /></svg>
+    </button>
+    <button class="item" (click)="copyUrl()">
+      <svg viewBox="0 0 24 24"><path [attr.d]="icons.link" /></svg>
+      <span class="label">Copy stream URL</span>
+    </button>
+    <button class="item" (click)="stats = !stats; contextMenu = undefined">
+      <svg viewBox="0 0 24 24"><path [attr.d]="icons.info" /></svg>
+      <span class="label">Stats for nerds</span>
+    </button>
+  </div>
+</div>

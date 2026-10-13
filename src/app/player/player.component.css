@@ -1,0 +1,494 @@
+/* Styling follows YouTube's desktop player (ytp-*) metrics and colors. */
+:host {
+  --red: #f00;
+  --menu-bg: rgba(28, 28, 28, 0.9);
+  --ease: cubic-bezier(0, 0, 0.2, 1);
+}
+
+.player {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  color: #eee;
+  font-family: "YouTube Noto", Roboto, Arial, sans-serif;
+  user-select: none;
+}
+
+.player.hide-cursor,
+.player.hide-cursor * {
+  cursor: none !important;
+}
+
+.surface {
+  position: absolute;
+  inset: 0;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+svg {
+  fill: currentColor;
+}
+
+/* ---------- top / bottom chrome ---------- */
+
+.top,
+.bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  opacity: 0;
+  transition: opacity 0.25s var(--ease);
+  pointer-events: none;
+}
+
+.top.visible,
+.bottom.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.top {
+  top: 0;
+  height: 64px;
+  display: flex;
+  align-items: flex-start;
+  background: linear-gradient(rgba(0, 0, 0, 0.6), transparent);
+}
+
+.title {
+  flex: 1;
+  padding: 16px 20px 0;
+  font-size: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+.window-buttons {
+  display: flex;
+}
+
+.window-buttons button {
+  width: 46px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+}
+
+.window-buttons svg {
+  width: 16px;
+  height: 16px;
+}
+
+.window-buttons button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.window-buttons .close:hover {
+  background: #e81123;
+}
+
+.bottom {
+  bottom: 0;
+  padding: 0 12px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding-top: 40px;
+}
+
+/* ---------- progress bar ---------- */
+
+.progress {
+  position: relative;
+  height: 16px;
+  margin-bottom: -5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.progress-track {
+  position: relative;
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: transform 0.1s var(--ease);
+  transform: scaleY(0.6);
+}
+
+.progress:hover .progress-track,
+.progress.scrubbing .progress-track {
+  transform: scaleY(1);
+}
+
+.progress-track > div {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.progress-buffered {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.progress-hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.progress-played {
+  background: var(--red);
+}
+
+.scrubber {
+  position: absolute;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  border-radius: 50%;
+  background: var(--red);
+  transform: scale(0);
+  transition: transform 0.1s var(--ease);
+}
+
+.progress:hover .scrubber,
+.progress.scrubbing .scrubber {
+  transform: scale(1);
+}
+
+.tooltip {
+  position: absolute;
+  bottom: 22px;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(28, 28, 28, 0.9);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ---------- control row ---------- */
+
+.controls {
+  height: 48px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.left,
+.right {
+  display: flex;
+  align-items: center;
+}
+
+.controls button {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  opacity: 0.9;
+}
+
+.controls button:hover {
+  opacity: 1;
+}
+
+.controls svg {
+  width: 28px;
+  height: 28px;
+}
+
+.cc {
+  position: relative;
+}
+
+.cc.on::after {
+  content: "";
+  position: absolute;
+  bottom: 9px;
+  left: 12px;
+  right: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--red);
+}
+
+.gear svg {
+  transition: transform 0.1s var(--ease);
+}
+
+.gear.open svg {
+  transform: rotate(30deg);
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+}
+
+.volume input {
+  width: 0;
+  opacity: 0;
+  height: 4px;
+  margin: 0;
+  appearance: none;
+  border-radius: 2px;
+  background: linear-gradient(to right, #fff var(--fill), rgba(255, 255, 255, 0.2) var(--fill));
+  transition:
+    width 0.2s var(--ease),
+    opacity 0.2s var(--ease),
+    margin 0.2s var(--ease);
+  cursor: pointer;
+}
+
+.volume:hover input,
+.volume input:focus {
+  width: 52px;
+  opacity: 1;
+  margin-right: 10px;
+}
+
+.volume input::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.time {
+  padding: 0 5px;
+  font-size: 14px;
+  color: #ddd;
+  white-space: nowrap;
+}
+
+.controls .live {
+  width: auto;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.live .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+}
+
+.live.behind .dot {
+  background: #757575;
+}
+
+/* ---------- center feedback ---------- */
+
+.spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bezel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.bezel-icon {
+  width: 52px;
+  height: 52px;
+  padding: 12px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  animation: bezel-fade 0.5s linear forwards;
+}
+
+.bezel-text {
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  animation: bezel-text-fade 0.6s linear forwards;
+}
+
+@keyframes bezel-fade {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+@keyframes bezel-text-fade {
+  70% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.hint {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  font-size: 22px;
+  pointer-events: none;
+}
+
+.end-replay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 72px;
+  height: 72px;
+  margin: -36px 0 0 -36px;
+  padding: 14px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- menus ---------- */
+
+.menu {
+  position: absolute;
+  z-index: 10;
+  min-width: 250px;
+  padding: 8px 0;
+  border-radius: 12px;
+  background: var(--menu-bg);
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  max-height: calc(100% - 120px);
+  overflow-y: auto;
+}
+
+.settings-menu {
+  right: 12px;
+  bottom: 61px;
+}
+
+.context-menu {
+  position: fixed;
+}
+
+.menu .item {
+  width: 100%;
+  height: 40px;
+  padding: 0 15px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.menu .item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.menu .item svg {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.menu .label {
+  flex: 1;
+}
+
+.menu .value {
+  color: #eee;
+  font-weight: 400;
+}
+
+.menu .chev {
+  margin-right: -6px;
+}
+
+.menu .header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 8px;
+}
+
+/* ---------- stats for nerds ---------- */
+
+.stats {
+  position: absolute;
+  top: 40px;
+  left: 10px;
+  max-width: calc(100% - 20px);
+  padding: 8px 32px 8px 10px;
+  background: rgba(28, 28, 28, 0.8);
+  font-size: 11px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.stats b {
+  display: inline-block;
+  min-width: 120px;
+  font-weight: 500;
+}
+
+.stats-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 11px;
+}
+
+/* ---------- miniplayer: tighter chrome ---------- */
+
+.mini .title {
+  font-size: 14px;
+  padding-top: 8px;
+}
+
+.mini .controls button {
+  width: 36px;
+}
+
+.mini .controls svg {
+  width: 22px;
+  height: 22px;
+}

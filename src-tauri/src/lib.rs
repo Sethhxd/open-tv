@@ -25,6 +25,8 @@ pub mod log;
 pub mod m3u;
 pub mod media_type;
 pub mod mpv;
+#[cfg(target_os = "windows")]
+pub mod player;
 pub mod restream;
 pub mod settings;
 pub mod share;
@@ -115,7 +117,8 @@ pub fn run() {
             hide_channel,
             hide_group,
             remove_from_history,
-            get_all_expiries
+            get_all_expiries,
+            player_command
         ])
         .setup(|app| {
             app.manage(Mutex::new(AppState {
@@ -130,7 +133,8 @@ pub fn run() {
         .on_window_event(|_window, event| match event {
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                if !*ENABLE_TRAY_ICON {
+                // Only the main window minimizes to tray; player windows really close.
+                if !*ENABLE_TRAY_ICON || _window.label() != "main" {
                     return;
                 }
 
@@ -218,8 +222,9 @@ async fn play(
     record: bool,
     record_path: Option<String>,
     state: State<'_, Mutex<AppState>>,
+    app: AppHandle,
 ) -> Result<(), String> {
-    mpv::play(channel, record, record_path, state)
+    mpv::play(channel, record, record_path, state, app)
         .await
         .map_err(map_err_frontend)
 }
@@ -513,8 +518,12 @@ async fn stop_restream(state: State<'_, Mutex<AppState>>) -> Result<(), String> 
 }
 
 #[tauri::command]
-async fn watch_self(port: u16, state: State<'_, Mutex<AppState>>) -> Result<(), String> {
-    restream::watch_self(port, state)
+async fn watch_self(
+    port: u16,
+    state: State<'_, Mutex<AppState>>,
+    app: AppHandle,
+) -> Result<(), String> {
+    restream::watch_self(port, state, app)
         .await
         .map_err(map_err_frontend)
 }
@@ -568,4 +577,15 @@ async fn cancel_play(
 #[tauri::command]
 async fn get_all_expiries() -> Result<HashMap<i64, i64>, String> {
     xtream::get_all_expiries().await.map_err(map_err_frontend)
+}
+
+#[tauri::command]
+fn player_command(window: tauri::WebviewWindow, msg: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    return player::send(window.label(), msg).map_err(map_err_frontend);
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (window, msg);
+        Err("embedded player is only supported on Windows".into())
+    }
 }

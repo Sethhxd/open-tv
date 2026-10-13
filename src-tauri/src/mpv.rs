@@ -8,7 +8,7 @@ use chrono::Local;
 
 use std::sync::LazyLock;
 use std::{env::consts::OS, path::Path, process::Stdio};
-use tauri::State;
+use tauri::{AppHandle, State};
 use tokio::sync::Mutex;
 use tokio::{
     io::{AsyncBufReadExt, BufReader},
@@ -45,6 +45,7 @@ pub async fn play(
     record: bool,
     record_path: Option<String>,
     state: State<'_, Mutex<AppState>>,
+    _app: AppHandle,
 ) -> Result<()> {
     eprintln!(
         "{} playing",
@@ -58,7 +59,12 @@ pub async fn play(
                 .ok()
         })
         .or(None);
-    let args = get_play_args(&channel, record, record_path, &source)?;
+    #[allow(unused_mut)]
+    let mut args = get_play_args(&channel, record, record_path, &source)?;
+    #[cfg(target_os = "windows")]
+    let player = crate::player::open(&_app, &channel)?;
+    #[cfg(target_os = "windows")]
+    args.extend(player.args.iter().cloned());
     eprintln!("with args: {:?}", args);
 
     if let Some(source) = source.as_ref() {
@@ -73,6 +79,8 @@ pub async fn play(
         .kill_on_drop(true)
         .spawn()?;
     let token = CancellationToken::new();
+    #[cfg(target_os = "windows")]
+    player.cancel_on_close(token.clone());
     let channel_id = channel.id.context("no channel id")?;
     if let Some(source_id) = source.as_ref().and_then(|s| s.id) {
         _ = crate::utils::insert_play_token(

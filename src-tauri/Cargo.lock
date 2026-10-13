@@ -3012,6 +3012,7 @@ dependencies = [
  "url",
  "warp",
  "which",
+ "windows 0.61.3",
  "winsplit",
 ]
 

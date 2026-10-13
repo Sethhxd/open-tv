@@ -158,7 +158,11 @@ async fn delete_old_segments(dir: &Path) -> Result<()> {
     Ok(())
 }
 
-pub async fn watch_self(port: u16, state: State<'_, Mutex<AppState>>) -> Result<()> {
+pub async fn watch_self(
+    port: u16,
+    state: State<'_, Mutex<AppState>>,
+    app: tauri::AppHandle,
+) -> Result<()> {
     let channel = Channel {
         url: Some(format!("http://127.0.0.1:{port}/stream.m3u8").to_string()),
         name: "Local livestream".to_string(),
@@ -176,7 +180,7 @@ pub async fn watch_self(port: u16, state: State<'_, Mutex<AppState>>) -> Result<
         episode_num: None,
         hidden: Some(false),
     };
-    mpv::play(channel, false, None, state).await
+    mpv::play(channel, false, None, state, app).await
 }
 
 pub fn share_restream(address: String, channel: Channel, path: String) -> Result<()> {

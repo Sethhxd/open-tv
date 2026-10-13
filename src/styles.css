@@ -8,6 +8,11 @@ body {
   color: white;
 }
 
+/* Player windows are transparent so mpv's video shows through the webview. */
+body.player-body {
+  background-color: transparent;
+}
+
 .help-modal__container {
   .help-modal {
     background-color: #202124 !important;
