@@ -32,6 +32,8 @@ import { SortButtonComponent } from './home/sort-button/sort-button.component';
 import { SortItemComponent } from './home/sort-button/sort-item/sort-item.component';
 import { DownloadManagerComponent } from './download-manager/download-manager.component';
 import { PlayerComponent } from './player/player.component';
+import { EpgGridComponent } from './epg-grid/epg-grid.component';
+import { InViewDirective } from './in-view.directive';
 
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
 import { TimeUntilPipe } from './pipes/time-until.pipe';
@@ -64,6 +66,8 @@ import { TimeUntilPipe } from './pipes/time-until.pipe';
     SortItemComponent,
     DownloadManagerComponent,
     PlayerComponent,
+    EpgGridComponent,
+    InViewDirective,
   ],
   imports: [
     BrowserModule,

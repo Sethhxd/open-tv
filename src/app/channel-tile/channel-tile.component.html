@@ -1,29 +1,39 @@
-<div id="tile-{{ id }}" placement="top" tabindex="0" (keyup.enter)="click()" [ngClass]="{
-    playing: starting,
-    faded: fade
-}" [ngbTooltip]="channel?.name" triggers="hover" (click)="click()" class="channel d-inline-flex p-2 align-items-center"
-  (contextmenu)="onRightClick($event)">
-  <div class="image-container me-2">
-    <img (error)="showImage = false" class="channel-image" *ngIf="channel?.image && showImage"
-      src="{{ channel?.image }}" />
+<!-- TiviMate-style channel row -->
+<div *ngIf="layout === 'row'" id="tile-{{ id }}" tabindex="-1" class="row-item" [class.playing]="isPlaying"
+  [class.faded]="fade" [title]="channel?.name" (click)="click()" (contextmenu)="onRightClick($event)"
+  (appInView)="loadEpg()">
+  <span class="num" *ngIf="number">{{ number }}</span>
+  <div class="logo">
+    <img *ngIf="channel?.image && showImage" [src]="channel?.image" loading="lazy" (error)="showImage = false" />
+    <span *ngIf="!channel?.image || !showImage" class="logo-fallback">{{ initials }}</span>
   </div>
-  <div class="channel-title-container d-flex flex-column justify-content-center">
-    <div class="channel-title">{{ channel?.name }}</div>
-    <div class="channel-source">{{ getSourceName() }}</div>
+  <div class="text">
+    <div class="name">{{ channel?.name }}</div>
+    <div class="sub" *ngIf="now">{{ now.title }}</div>
+    <div class="sub dim" *ngIf="!now && getSourceName()">{{ getSourceName() }}</div>
+    <div class="bar" *ngIf="now"><div [style.width.%]="progress * 100"></div></div>
   </div>
-  <div class="ms-auto d-flex flex-column justify-content-center align-items-center h-100">
-    <svg *ngIf="channel?.tv_archive === true" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      class="archive-icon">
-      <title>archive-clock</title>
-      <path
-        d="M20 6H2V2H20V6M16.5 12H15V17L18.61 19.16L19.36 17.94L16.5 16.25V12M23 16C23 19.87 19.87 23 16 23C13.62 23 11.53 21.81 10.26 20H3V7H19V9.68C21.36 10.81 23 13.21 23 16M8 12H10.26C10.83 11.19 11.56 10.5 12.41 10H8.5C8.22 10 8 10.22 8 10.5V12M21 16C21 13.24 18.76 11 16 11S11 13.24 11 16 13.24 21 16 21 21 18.76 21 16Z" />
+  <div class="badges">
+    <svg *ngIf="channel?.tv_archive === true" viewBox="0 0 24 24"><title>Catch-up</title>
+      <path d="M13.5 8H12v5l4.28 2.54.72-1.21-3.5-2.08V8M13 3a9 9 0 0 0-9 9H1l3.96 4.03L9 12H6a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.9 8.9 0 0 0 13 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9" />
     </svg>
-    <svg *ngIf="channel?.favorite" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      class="favorite-icon">
-      <title>star</title>
+    <svg *ngIf="channel?.favorite" class="fav" viewBox="0 0 24 24"><title>Favorite</title>
       <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z" />
     </svg>
   </div>
+</div>
+
+<!-- VOD poster card (movies, series, seasons) -->
+<div *ngIf="layout === 'poster'" id="tile-{{ id }}" tabindex="-1" class="poster" [class.playing]="isPlaying"
+  [class.faded]="fade" [title]="channel?.name" (click)="click()" (contextmenu)="onRightClick($event)">
+  <div class="art">
+    <img *ngIf="channel?.image && showImage" [src]="channel?.image" loading="lazy" (error)="showImage = false" />
+    <span *ngIf="!channel?.image || !showImage" class="logo-fallback">{{ initials }}</span>
+    <svg *ngIf="channel?.favorite" class="fav" viewBox="0 0 24 24">
+      <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z" />
+    </svg>
+  </div>
+  <div class="title">{{ channel?.name }}</div>
 </div>
 
 <div style="visibility: hidden; position: fixed" [style.left.px]="menuTopLeftPosition.x"

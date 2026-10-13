@@ -1,2 +1,13 @@
-<router-outlet></router-outlet>
+<!-- Opaque backdrop with a hole where the preview video shows through (preview mode only). -->
+<div class="backdrop" *ngIf="player.preview" [style.clip-path]="player.backdropClip"></div>
+
+<!-- Browsing stays alive under full-screen playback, so Back returns exactly where you were. -->
+<div class="browse" [hidden]="player.full">
+  <router-outlet></router-outlet>
+</div>
+
+@for (c of player.channel ? [player.channel] : []; track c) {
+  <app-player [hidden]="!player.full"></app-player>
+}
+
 <app-download-manager *ngIf="showDownloadManager()"></app-download-manager>

@@ -1,0 +1,273 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+  --chan-w: 240px;
+  --row-h: 56px;
+}
+
+.grid {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* ---------- detail header ---------- */
+
+.detail {
+  flex: none;
+  min-height: 112px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--tv-line);
+}
+
+.detail-title {
+  font-size: 20px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag {
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--tv-text);
+}
+
+.tag.live {
+  background: var(--tv-live);
+}
+
+.detail-meta {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--tv-dim);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-bar {
+  width: 120px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.detail-bar span {
+  display: block;
+  height: 100%;
+  background: var(--tv-accent);
+}
+
+.detail-desc {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #c3c8ce;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- time axis ---------- */
+
+.timebar {
+  flex: none;
+  height: 34px;
+  display: flex;
+  border-bottom: 1px solid var(--tv-line);
+}
+
+.corner {
+  width: var(--chan-w);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 10px;
+}
+
+.corner button {
+  background: rgba(255, 255, 255, 0.06);
+  border: 0;
+  border-radius: 4px;
+  color: var(--tv-text);
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.corner button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.ticks {
+  position: relative;
+  flex: 1;
+}
+
+.ticks span {
+  position: absolute;
+  top: 8px;
+  padding-left: 6px;
+  font-size: 12px;
+  color: var(--tv-dim);
+  border-left: 1px solid var(--tv-line);
+}
+
+.now-marker {
+  position: absolute;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-bottom-color: var(--tv-live);
+}
+
+/* ---------- rows ---------- */
+
+.rows {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.row {
+  height: var(--row-h);
+  display: flex;
+  border-bottom: 1px solid var(--tv-line);
+}
+
+.chan {
+  width: var(--chan-w);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+}
+
+.row.focused .chan {
+  background: var(--tv-focus);
+  border-left-color: var(--tv-accent);
+}
+
+.row.current .chan-name {
+  color: var(--tv-accent);
+}
+
+.chan .num {
+  width: 30px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--tv-dim);
+}
+
+.chan img {
+  width: 40px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.chan-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progs {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+.prog {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: var(--tv-panel-2);
+  border-right: 2px solid var(--tv-bg);
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.prog.empty {
+  left: 0;
+  right: 0;
+  color: var(--tv-dim);
+  font-size: 13px;
+}
+
+.prog.now {
+  background: #1f2833;
+}
+
+.prog.past {
+  color: var(--tv-dim);
+}
+
+.prog:hover {
+  background: #26303c;
+}
+
+.prog.focused {
+  background: var(--tv-accent);
+  color: #06121f;
+}
+
+.prog-title,
+.prog-time {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prog-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.prog-time {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.bell {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.now-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--tv-live);
+  pointer-events: none;
+}

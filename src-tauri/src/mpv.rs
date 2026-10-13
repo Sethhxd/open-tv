@@ -80,7 +80,7 @@ pub async fn play(
         .spawn()?;
     let token = CancellationToken::new();
     #[cfg(target_os = "windows")]
-    player.cancel_on_close(token.clone());
+    player.track(token.clone(), cmd.id());
     let channel_id = channel.id.context("no channel id")?;
     if let Some(source_id) = source.as_ref().and_then(|s| s.id) {
         _ = crate::utils::insert_play_token(

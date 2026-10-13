@@ -31,6 +31,8 @@ import { NodeType, fromMediaType } from "../models/nodeType";
 
 import { ViewMode } from "../models/viewMode";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { EpgService, Programme } from "../epg.service";
+import { PlayerService } from "../player.service";
 
 @Component({
   selector: "app-channel-tile",
@@ -46,10 +48,17 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
     private el: ElementRef,
     private renderer: Renderer2,
     private download: DownloadService,
+    private epg: EpgService,
+    public player: PlayerService,
   ) { }
   @Input() channel?: Channel;
   @Input() id!: number;
   @Input() viewMode: number = 0;
+  /** "row" = TiviMate channel list entry, "poster" = VOD artwork card. */
+  @Input() layout: "row" | "poster" = "row";
+  @Input() number?: number;
+  now?: Programme;
+  progress = 0;
   @ViewChild(MatMenuTrigger, { static: true }) matMenuTrigger!: MatMenuTrigger;
   menuTopLeftPosition = { x: 0, y: 0 };
   showImage: boolean = true;
@@ -66,19 +75,44 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
     this.getExistingDownload();
   }
 
+  /** Called once the row scrolls into view, so off-screen rows never hit the provider. */
+  async loadEpg() {
+    if (!this.epg.hasEpg(this.channel)) return;
+    const programmes = await this.epg.get(this.channel);
+    if (!programmes.length) return;
+    this.subscriptions.push(
+      this.epg.clock$.subscribe((t) => {
+        this.now = this.epg.nowNext(programmes, t).now;
+        this.progress = this.epg.progress(this.now, t);
+      }),
+    );
+  }
+
+  get initials(): string {
+    return (this.channel?.name ?? "?").replace(/[^\p{L}\p{N} ]/gu, "").trim().slice(0, 2).toUpperCase();
+  }
+
   setDownloadGradient(progress: number) {
     let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
-    let background = `linear-gradient(to right, green ${progress}%, #343a40 ${progress}%)`;
+    let background = `linear-gradient(to right, rgba(46, 160, 67, 0.5) ${progress}%, transparent ${progress}%)`;
     this.renderer.setStyle(element, "background", background);
   }
 
   clearDownloadGradient() {
     let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
-    let background = "#343a40";
-    this.renderer.setStyle(element, "background", background);
+    this.renderer.removeStyle(element, "background");
+  }
+
+  get isPlaying(): boolean {
+    return this.player.channel?.id === this.channel?.id;
   }
 
   async click(record = false) {
+    // Already on screen (preview): go back to it instead of reconnecting.
+    if (!record && this.isPlaying && this.player.preview) {
+      this.player.setMode("full");
+      return;
+    }
     if (this.starting === true) {
       try {
         await invoke("cancel_play", { sourceId: this.channel?.source_id, channelId: this.channel?.id });
@@ -139,13 +173,23 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
   }
 
   onRightClick(event: MouseEvent) {
+    event.preventDefault();
+    this.openMenuAt(event.clientX, event.clientY);
+  }
+
+  /** Context menu from the keyboard (Menu key / long-press Enter): anchor it on the tile. */
+  openMenuFromKeyboard() {
+    const rect = this.el.nativeElement.getBoundingClientRect();
+    this.openMenuAt(rect.left + Math.min(rect.width / 2, 160), rect.top + rect.height / 2);
+  }
+
+  openMenuAt(x: number, y: number) {
     if (this.channel?.media_type == MediaType.season) return;
     this.alreadyExistsInFav = this.channel!.favorite!;
     this.alreadyHidden = this.channel!.hidden!;
     this.downloading = this.isDownloading();
-    event.preventDefault();
-    this.menuTopLeftPosition.x = event.clientX;
-    this.menuTopLeftPosition.y = event.clientY;
+    this.menuTopLeftPosition.x = x;
+    this.menuTopLeftPosition.y = y;
     if (this.memory.currentContextMenu?.menuOpen) this.memory.currentContextMenu.closeMenu();
     this.memory.currentContextMenu = this.matMenuTrigger;
     this.matMenuTrigger.openMenu();

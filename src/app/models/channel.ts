@@ -4,6 +4,7 @@ export class Channel {
   id?: number;
   name?: string;
   group_id?: number;
+  group?: string;
   image?: string;
   url?: string;
   media_type?: MediaType;

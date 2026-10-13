@@ -1,0 +1,73 @@
+<div class="grid">
+  <!-- Focused programme details, like TiviMate's guide header -->
+  <div class="detail">
+    <ng-container *ngIf="focused; else noInfo">
+      <div class="detail-title">
+        {{ focused.title }}
+        <span class="tag live" *ngIf="isNow(focused)">LIVE</span>
+        <span class="tag" *ngIf="!isNow(focused) && focused.end <= now && focused.timeshift_url">Catch-up</span>
+        <span class="tag" *ngIf="hasReminder(focused)">Reminder set</span>
+      </div>
+      <div class="detail-meta">
+        {{ focusedChannel?.name }} · {{ time(focused.start) }} – {{ time(focused.end) }}
+        <span class="detail-bar" *ngIf="isNow(focused)"><span [style.width.%]="focusedProgress * 100"></span></span>
+      </div>
+      <div class="detail-desc">{{ focused.description }}</div>
+    </ng-container>
+    <ng-template #noInfo>
+      <div class="detail-title">{{ focusedChannel?.name }}</div>
+      <div class="detail-meta">No programme information</div>
+    </ng-template>
+  </div>
+
+  <div class="timebar">
+    <div class="corner">
+      <button (click)="shiftWindow(-30)" aria-label="Earlier">‹</button>
+      <button (click)="shiftWindow(0)">Now</button>
+      <button (click)="shiftWindow(30)" aria-label="Later">›</button>
+    </div>
+    <div class="ticks">
+      <span *ngFor="let t of ticks" [style.left.%]="pct(t)">{{ time(t) }}</span>
+      <div class="now-marker" *ngIf="now >= windowStart && now < windowEnd" [style.left.%]="pct(now)"></div>
+    </div>
+  </div>
+
+  <div class="rows">
+    <div
+      class="row"
+      *ngFor="let c of channels; let i = index"
+      [id]="'grid-row-' + i"
+      [class.focused]="i === row"
+      [class.current]="c.id === currentId"
+      (appInView)="load(c)"
+    >
+      <div class="chan" (click)="onChannelClick(i)" [title]="c.name">
+        <span class="num">{{ i + 1 }}</span>
+        <img *ngIf="c.image" [src]="c.image" loading="lazy" />
+        <span class="chan-name">{{ c.name }}</span>
+      </div>
+      <div class="progs">
+        <div
+          class="prog"
+          *ngFor="let p of visible(c); trackBy: trackProgramme"
+          [style.left.%]="left(p)"
+          [style.width.%]="width(p)"
+          [class.now]="isNow(p)"
+          [class.past]="p.end <= now"
+          [class.focused]="i === row && p === focused"
+          (click)="onProgrammeClick(i, p)"
+        >
+          <span class="prog-title">{{ p.title }}</span>
+          <span class="prog-time">{{ time(p.start) }}</span>
+          <svg *ngIf="hasReminder(p)" class="bell" viewBox="0 0 24 24">
+            <path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2m6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1z" />
+          </svg>
+        </div>
+        <div class="prog empty" *ngIf="!visible(c).length" [class.focused]="i === row && !focused" (click)="row = i">
+          {{ loaded.has(c.id!) ? "No information" : "Loading…" }}
+        </div>
+        <div class="now-line" *ngIf="now >= windowStart && now < windowEnd" [style.left.%]="pct(now)"></div>
+      </div>
+    </div>
+  </div>
+</div>

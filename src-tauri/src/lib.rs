@@ -118,7 +118,9 @@ pub fn run() {
             hide_group,
             remove_from_history,
             get_all_expiries,
-            player_command
+            player_command,
+            player_rect,
+            player_stop
         ])
         .setup(|app| {
             app.manage(Mutex::new(AppState {
@@ -133,11 +135,13 @@ pub fn run() {
         .on_window_event(|_window, event| match event {
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                // Only the main window minimizes to tray; player windows really close.
                 if !*ENABLE_TRAY_ICON || _window.label() != "main" {
                     return;
                 }
 
+                // Hidden to tray: don't keep playing invisibly.
+                #[cfg(target_os = "windows")]
+                player::stop();
                 _window.hide().unwrap();
                 api.prevent_close();
             }
@@ -580,12 +584,27 @@ async fn get_all_expiries() -> Result<HashMap<i64, i64>, String> {
 }
 
 #[tauri::command]
-fn player_command(window: tauri::WebviewWindow, msg: String) -> Result<(), String> {
+fn player_command(msg: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
-    return player::send(window.label(), msg).map_err(map_err_frontend);
+    return player::send(msg).map_err(map_err_frontend);
     #[cfg(not(target_os = "windows"))]
     {
-        let _ = (window, msg);
+        let _ = msg;
         Err("embedded player is only supported on Windows".into())
     }
+}
+
+/// Positions the embedded video (physical px in the main window); width 0 hides it.
+#[tauri::command]
+fn player_rect(x: i32, y: i32, width: i32, height: i32) {
+    #[cfg(target_os = "windows")]
+    player::set_rect(Some((x, y, width, height)));
+    #[cfg(not(target_os = "windows"))]
+    let _ = (x, y, width, height);
+}
+
+#[tauri::command]
+fn player_stop() {
+    #[cfg(target_os = "windows")]
+    player::stop();
 }

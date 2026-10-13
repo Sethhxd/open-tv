@@ -3,9 +3,43 @@
 @import "@angular/material/prebuilt-themes/pink-bluegrey.css";
 @import "./assets/css/roboto.css";
 
+:root {
+  /* TiviMate-like dark palette, shared by the main window and the player */
+  --tv-bg: #0d0f12;
+  --tv-panel: #14171c;
+  --tv-panel-2: #1a1e24;
+  --tv-line: rgba(255, 255, 255, 0.07);
+  --tv-text: #e8eaed;
+  --tv-dim: #8f969e;
+  --tv-accent: #3ea6ff;
+  --tv-focus: #263445;
+  --tv-hover: rgba(255, 255, 255, 0.05);
+  --tv-live: #e53935;
+  --tv-overlay: rgba(10, 12, 15, 0.88);
+}
+
 body {
-  background-color: #202124;
-  color: white;
+  background-color: var(--tv-bg);
+  color: var(--tv-text);
+}
+
+/* Dark, thin scrollbars to match the TV theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.26);
 }
 
 /* Player windows are transparent so mpv's video shows through the webview. */
